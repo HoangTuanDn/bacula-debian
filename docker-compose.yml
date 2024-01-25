@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  app:
+    image: bacularis:ubuntu22.04
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: master-backup
+    
+    ports:
+      - 9103:9103
+      - 9097:9097
+      - 9102:9102
+    volumes:
+      - ./data/bacula/etc:/opt/bacula/etc
