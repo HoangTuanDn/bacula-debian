@@ -1,0 +1,1 @@
+docker file for bacula base debian image use bacularis inspired by https://github.com/fametec/bacula
