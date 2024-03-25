@@ -1,16 +1,60 @@
-version: '3.7'
+version: '3.1'
 
 services:
-  app:
-    image: bacularis:ubuntu22.04
-    build:
-      context: .
-      dockerfile: Dockerfile
-    hostname: master-backup
-    
+  db:
+    image: nhtdn/bacula-catalog:13.0.2
+    restart: unless-stopped
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data:rw
+    ports:
+      - 5432:5432
+
+  #--------------------
+  bacula-dir:
+    image: nhtdn/bacula-dir:13.0.2
+    restart: unless-stopped
+    volumes:
+      - ./config/etc:/opt/bacula/etc:ro
+    depends_on:
+      - db
+    ports:
+      - 9101:9101
+  
+  #--------------------
+  bacula-sd:
+    image: nhtdn/bacula-sd:13.0.2
+    restart: unless-stopped
+    volumes:
+      - ./config/etc:/opt/bacula/etc:ro
+    depends_on:
+      - db
+      - bacula-dir
     ports:
       - 9103:9103
-      - 9097:9097
-      - 9102:9102
+  
+  #--------------------
+  bacula-fd:
+    image: nhtdn/bacula-fd:13.0.2
+    restart: unless-stopped
     volumes:
-      - ./data/bacula/etc:/opt/bacula/etc
+      - ./config/etc:/opt/bacula/etc:ro
+    depends_on:
+      - db
+      - bacula-dir
+      - bacula-sd
+    ports:
+      - 9102:9102
+
+  #--------------------
+  bacula-web:
+    image: nhtdn/bacula-web:13.0.2
+    restart: unless-stopped
+    volumes:
+      - ./config/etc:/opt/bacula/etc:rw
+      - ./bacularis/config/API:/var/www/bacularis-app/protected/vendor/bacularis/bacularis-api/API/Config:rw
+      - ./bacularis/config/Web:/var/www/bacularis-app/protected/vendor/bacularis/bacularis-web/Web/Config:rw
+      - ./bacularis/config/api.conf:/var/www/bacularis-app/protected/vendor/bacularis/bacularis-api/API/Config/api.conf:rw
+    depends_on:
+      - bacula-dir
+    ports:
+      - 9097:9097
